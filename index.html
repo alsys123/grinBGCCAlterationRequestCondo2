@@ -210,10 +210,8 @@
       <span class="chevron" id="rulesChevron">&#9656;</span>
     </div>
     <div class="section-body" id="rulesBody">
-      <label for="rulesText">Paste or edit the alteration-related bylaws / rules here</label>
-      <textarea id="rulesText" rows="10" placeholder="e.g. Section 7.2 — Exterior Alterations: No resident may alter the exterior appearance of a unit, including paint colour, siding, roofing, or window style, without prior written approval from the Board..."></textarea>
-      <button class="primary" id="saveRules" style="margin-top:10px;">Save Rules</button>
-      <div class="save-note" id="rulesSavedNote"></div>
+      <p class="save-note" style="margin-bottom:8px;">These rules are set directly in the code (search for <code>COMMUNITY_RULES</code>) rather than editable here, so they stay consistent for every resident using this tool.</p>
+      <pre id="rulesText" style="white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:1.6;background:#fbfaf4;border:1px solid var(--line);border-radius:2px;padding:12px;max-height:340px;overflow-y:auto;"></pre>
     </div>
   </section>
 
@@ -265,9 +263,10 @@
 </div>
 
 <script>
-const DEFAULT_RULES = `[No rules loaded yet — paste your condo corporation's alteration bylaws above and click Save Rules. Example placeholder below.]
-
-Section 7.2 — Exterior Alterations
+// EDIT THIS CONSTANT to update the community's alteration rules.
+// This is the single source of truth used both for the on-screen reference panel
+// and for every AI review — update it here whenever the bylaws change.
+const COMMUNITY_RULES = `Section 7.2 — Exterior Alterations
 No resident shall alter, replace, or add to any exterior element of a unit (siding, roofing, doors, windows, shutters, exterior paint or stain colour) without prior written Board approval. Approved colours are limited to the community's standard palette.
 
 Section 7.5 — Decks, Patios, and Fencing
@@ -281,6 +280,10 @@ No signs, flags, or banners may be displayed except one small nameplate matching
 
 Section 10.1 — Interior Alterations
 Interior alterations that do not affect structural walls, plumbing stacks, or shared systems do not require Board approval. Alterations affecting shared walls, structural elements, or building systems require Board approval and a licensed contractor.`;
+
+function renderRules(){
+  document.getElementById('rulesText').textContent = COMMUNITY_RULES;
+}
 
 function toggleSection(headId, bodyId, chevId){
   const body = document.getElementById(bodyId);
@@ -309,30 +312,6 @@ document.getElementById('visToggle').querySelectorAll('.toggle-opt').forEach(el=
     visibleVal = el.dataset.val;
   };
 });
-
-async function loadRules(){
-  try{
-    const res = await window.storage.get('bgcc-rules-text', false);
-    document.getElementById('rulesText').value = res ? res.value : DEFAULT_RULES;
-  }catch(e){
-    document.getElementById('rulesText').value = DEFAULT_RULES;
-  }
-}
-async function saveRules(){
-  const val = document.getElementById('rulesText').value;
-  try{
-    const res = await window.storage.set('bgcc-rules-text', val, false);
-    const note = document.getElementById('rulesSavedNote');
-    if(res){
-      note.textContent = 'Saved ' + new Date().toLocaleTimeString();
-    }else{
-      note.textContent = 'Could not save — try again.';
-    }
-  }catch(e){
-    document.getElementById('rulesSavedNote').textContent = 'Save failed: ' + e.message;
-  }
-}
-document.getElementById('saveRules').onclick = saveRules;
 
 async function loadHistory(){
   try{
@@ -398,7 +377,7 @@ document.getElementById('clearHistory').onclick = async () => {
 async function submitRequest(){
   const desc = document.getElementById('reqDesc').value.trim();
   const unit = document.getElementById('reqUnit').value.trim();
-  const rules = document.getElementById('rulesText').value.trim();
+  const rules = COMMUNITY_RULES;
   const resultSection = document.getElementById('resultSection');
   const resultBody = document.getElementById('resultBody');
   const btn = document.getElementById('submitBtn');
@@ -482,7 +461,7 @@ Use "Needs Board Review" whenever the rules are ambiguous, silent on the topic, 
 document.getElementById('submitBtn').onclick = submitRequest;
 
 (async function init(){
-  await loadRules();
+  renderRules();
   const history = await loadHistory();
   renderHistory(history);
 })();
